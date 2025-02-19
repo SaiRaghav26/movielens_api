@@ -1,0 +1,87 @@
+from rest_framework import viewsets, mixins,permissions
+import django_filters
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+from rest_framework.exceptions import ValidationError
+from rest_framework import generics,status
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from rest_framework.response import Response
+from django.contrib.auth.models import User
+from .models import Movie, Rating, Tag
+from .serializers import MovieSerializer, RatingSerializer, TagSerializer,UserRegisterSerializer,UserLoginSerializer
+
+# Create your views here.
+
+class UserRegisterViewSet(generics.CreateAPIView):
+     queryset=User.objects.all()
+     serializer_class=UserRegisterSerializer
+
+
+class UserLoginViewSet(generics.CreateAPIView):
+    serializer_class=UserLoginSerializer
+
+    def create(self,request,*args,**kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        username=serializer.validated_data['username']
+        password=serializer.validated_data['password']
+        user=authenticate(username=username,password=password)
+
+        if user:
+            refresh=RefreshToken.for_user(user)
+            return Response({
+                'access_token':str(refresh.access_token),
+                'refresh_token':str(refresh)
+            },status=status.HTTP_200_OK)
+        return Response({'error':'invalid credential'},status=status.HTTP_401_UNAUTHORIZED)
+    
+
+class MovieFilter(django_filters.FilterSet):
+    genres = django_filters.CharFilter(field_name="genres", lookup_expr="icontains")
+    tags = django_filters.CharFilter(field_name="tag_set__tags", lookup_expr="icontains")  # Correct related field reference
+
+    class Meta:
+        model = Movie
+        fields = ['genres', 'tags']  #  Use 'tags' instead of 'tag_set__tags'
+
+
+class MovieViewSet(viewsets.ModelViewSet):
+    queryset = Movie.objects.all()
+    serializer_class = MovieSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    #  Enables filtering & ordering
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]  
+    ordering_fields = ['title']  #  Allows ordering by title
+
+    #  Filtering by genres and tags (modify if genres is ManyToManyField)
+    filterset_fields = {
+    'genres': ['icontains'],  
+    'tag__tags': ['icontains']  # ✅ Correct field for ForeignKey (not tag_set__tags)
+}
+
+
+
+
+
+
+class RatingViewSet(mixins.CreateModelMixin,viewsets.GenericViewSet):
+    queryset = Rating.objects.all()
+    serializer_class = RatingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        movie = serializer.validated_data['movie']
+
+        if Rating.objects.filter(user=user, movie=movie).exists():
+            raise ValidationError('You have already rated this movie.')
+        serializer.save(user=user)
+
+
+class TagViewSet(mixins.CreateModelMixin,viewsets.GenericViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [permissions.IsAuthenticated]
