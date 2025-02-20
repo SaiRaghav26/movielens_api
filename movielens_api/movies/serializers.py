@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from .models import Movie,Rating,Tag
 from django.db.models import Avg
 
-class UserRegisterSerializer(serializers.ModelSerializer):
+class UserRegisterSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
     class Meta:
         model=User

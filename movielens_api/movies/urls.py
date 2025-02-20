@@ -6,7 +6,8 @@ from .views import (
     UserLoginViewSet, 
     MovieViewSet, 
     RatingViewSet, 
-    TagViewSet
+    TagViewSet,
+    LogoutView
 )
 
 # Using DRF's router for ViewSets
@@ -19,6 +20,7 @@ urlpatterns = [
     # User authentication URLs (separate because they use generics)
     path('register/', UserRegisterViewSet.as_view(), name='register'),
     path('login/', UserLoginViewSet.as_view(), name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
 
     #  JWT Authentication Endpoints
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # Login & get JWT tokens

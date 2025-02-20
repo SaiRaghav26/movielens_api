@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',  # DRF
     'rest_framework_simplejwt',
     'drf_yasg',        # Swagger
+    'rest_framework_simplejwt.token_blacklist',
     'django_filters',
     'movies',
 ]
