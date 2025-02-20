@@ -54,15 +54,6 @@ class LogoutView(APIView):
             return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
     
 
-class MovieFilter(django_filters.FilterSet):
-    genres = django_filters.CharFilter(field_name="genres", lookup_expr="icontains")
-    tags = django_filters.CharFilter(field_name="tag_set__tags", lookup_expr="icontains")  # Correct related field reference
-
-    class Meta:
-        model = Movie
-        fields = ['genres', 'tags']  #  Use 'tags' instead of 'tag_set__tags'
-
-
 class MovieViewSet(viewsets.ModelViewSet):
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
